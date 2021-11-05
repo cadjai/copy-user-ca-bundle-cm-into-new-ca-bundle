@@ -1,0 +1,6 @@
+---
+# defaults file for copy-user-ca-bundle-cm-into-new-ca-bundle 
+ansible_name_module: 'copy-user-ca-bundle-cm-into-new-ca-bundle'
+openshift_cli: '/usr/bin/oc'
+update_new_ca_bundle_cm_namespace: 'false'
+create_new_ca_bundle_cm: 'false'
