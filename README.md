@@ -14,11 +14,14 @@ Role Variables
 
 - openshift_cli: Openshift client binary used to interact with the cluster api (default to 'oc')
 - existing_ca_bundle_cm_name: Name of the CA bundle CM to be exported
+- new_ca_bundle_cm_name: Name of the new CA bundle CM to be created
 - existing_ca_bundle_cm_namespace: The namespace where the CA bundle being exported is currently located
 - new_ca_bundle_cm_file: Name and path of the exported CM yaml manifest 
 - new_ca_bundle_cm_namespace: The name of the namespace where the new config map is to be provisioned into
 - update_new_ca_bundle_cm_namespace: Wheter to update the namespace in the created configmap
 - create_new_ca_bundle_cm: Whether to create the newly create CA bundle configmap
+- new_ca_bundle_cert_key: Name of the key in the new CA bundle configmap.
+- existing_ca_bundle_cert_key: Name of the key in the existing CA bundle configmap.
 
 Dependencies
 ------------

@@ -91,19 +91,19 @@
     - name: Update CA CM name in exported file 1 of 2
       replace:
         path: "{{ new_ca_bundle_cm_file }}"
-        regexp: "user-ca-bundle"
-        replace: "{{ ca_cm_name | default('user-new-ca') }}"
+        regexp: "{{ existing_ca_cm_name | default('user-ca-bundle', false) }}"
+        replace: "{{ new_ca_cm_name | default('user-new-ca', false) }}"
 
     - name: Update CA CM name in exported file 2 of 2
       replace:
         path: "{{ new_ca_bundle_cm_file }}"
-        regexp: "ca-bundle.crt"
-        replace: "ca.crt"
+        regexp: "{{ existing_ca_bundle_cert_key | default('ca-bundle.crt', false) }}"
+        replace: "{{ new_ca_bundle_cert_key | default('ca.crt', false) }}"
 
     - name: Update namespace name in exported file
       replace:
         path: "{{ new_ca_bundle_cm_file }}"
-        regexp: "namespace: openshift-config"
+        regexp: "namespace: {{ existing_ca_bundle_cm_namespace | default('openshift-config', false) }}"
         replace: "namespace: {{ new_ca_bundle_cm_namespace }}"
       when:
         - new_ca_bundle_cm_namespace is defined
@@ -114,5 +114,8 @@
 - name: '{{ ansible_name_module }} | create user new CA CM'
   command: >
     {{ openshift_cli }} apply -f "{{ new_ca_bundle_cm_file }}"
+  when:
+    - create_new_ca_bundle_cm is defined
+    - create_new_ca_bundle_cm | bool
   register: new_ca_created
 
