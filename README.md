@@ -23,6 +23,12 @@ Role Variables
 - new_ca_bundle_cert_key: Name of the key in the new CA bundle configmap.
 - existing_ca_bundle_cert_key: Name of the key in the existing CA bundle configmap.
 
+Variables for the additional CA bundle for registries
+- registries_trust_stores: The structure containing information about the various private registries whose CA should be trusted within the additional trusted CA bundle used for the private registry.
+   - fqdn: The FQDN or IP of the registry.
+   - port: The port on which the registry listen (default assumes 443)
+   - ca_file_pem: The path to the pem based certificate file to use.
+      
 Dependencies
 ------------
 
