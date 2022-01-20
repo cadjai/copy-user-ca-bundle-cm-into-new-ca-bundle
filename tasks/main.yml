@@ -1,7 +1,7 @@
 ---
 - name: '{{ ansible_name_module }} | check user ca'
   shell: >
-    {{ openshift_cli }} get cm {{ existing_ca_bundle_cm_name | default('user-ca-bundle', false) }} -n {{ existing_ca_bundle_cm_namespace | default('openshift-config', false) -o yaml > "{{ new_ca_bundle_cm_file }}"
+    {{ openshift_cli }} get cm {{ existing_ca_bundle_cm_name | default('user-ca-bundle', false) }} -n {{ existing_ca_bundle_cm_namespace | default('openshift-config', false) }} -o yaml > "{{ new_ca_bundle_cm_file }}"
   ignore_errors: true
   register: user_ca_bundle_exist
 
@@ -91,14 +91,20 @@
     - name: Update CA CM name in exported file 1 of 2
       replace:
         path: "{{ new_ca_bundle_cm_file }}"
-        regexp: "{{ existing_ca_cm_name | default('user-ca-bundle', false) }}"
-        replace: "{{ new_ca_cm_name | default('user-new-ca', false) }}"
+        regexp: "{{ existing_ca_bundle_cm_name | default('user-ca-bundle', false) }}"
+        replace: "{{ new_ca_bundle_cm_name | default('user-new-ca', false) }}"
+      when:
+        - new_ca_bundle_cm_name is defined
+        - new_ca_bundle_cm_name != ''
 
     - name: Update CA CM name in exported file 2 of 2
       replace:
         path: "{{ new_ca_bundle_cm_file }}"
         regexp: "{{ existing_ca_bundle_cert_key | default('ca-bundle.crt', false) }}"
         replace: "{{ new_ca_bundle_cert_key | default('ca.crt', false) }}"
+      when:
+        - new_ca_bundle_cert_key is defined
+        - new_ca_bundle_cert_key != ''
 
     - name: Update namespace name in exported file
       replace:
