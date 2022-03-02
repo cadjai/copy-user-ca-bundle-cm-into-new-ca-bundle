@@ -23,6 +23,11 @@
   when:
     - ca_bundle_files is defined
     - ca_bundle_files | length > 0 
+  failed_when:
+    - registry_ca_bundle_cm_created.rc is defined
+    - registry_ca_bundle_cm_created.rc >= 1
+    - registry_ca_bundle_cm_created.stderr is defined
+    - " not 'already exists' in registry_ca_bundle_cm_created.stderr "
   register: registry_ca_bundle_cm_created
 
 - name: '{{ ansible_name_module }} | update registry config'
