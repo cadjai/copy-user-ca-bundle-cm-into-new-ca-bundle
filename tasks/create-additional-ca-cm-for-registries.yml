@@ -1,40 +1,15 @@
 ---
-- name: '{{ ansible_name_module }} | Create list of CM files to use'
-  set_fact:
-    ca_bundle_files: "{{ ca_bundle_files | default([]) + ['--from-file=' + item.value.fqdn + registry_host_port_formatted + '=' + item.value.ca_file_pem ] }}" 
-  with_dict: "{{ registries_trust_stores }}"
-  loop_control:
-    index_var: key_cnt
-  when:
-    - item.key is defined and item.key != ""
-    - item.value.fqdn is defined and item.value.fqdn != ""
-    - item.value.ca_file_pem is defined and item.value.ca_file_pem != ''
+- name: '{{ ansible_name_module }} | Import Create additional CA CM tasks'
+  import_tasks: create-additional-ca-cm.yml
   vars:
-    registry_host_port_formatted: "{{ '..' + item.value.port if item.value.port is defined and item.value.port | int > 0 else '' }}"
-  register: registry_ca_bundle_appended
-
-- name: '{{ ansible_name_module }} | set configmap name'
-  set_fact:
-    ca_cm_name: "{{ registry_ca_bundle_cm_name | default('registry-config', false) }}" 
-
-- name: '{{ ansible_name_module }} | Create list of CM files to use'
-  command: >
-    {{ openshift_cli }} create cm {{ ca_cm_name }} -n openshift-config {{ ca_bundle_files | join(' ') }} 
-  when:
-    - ca_bundle_files is defined
-    - ca_bundle_files | length > 0 
-  failed_when:
-    - registry_ca_bundle_cm_created.rc is defined
-    - registry_ca_bundle_cm_created.rc >= 1
-    - registry_ca_bundle_cm_created.stderr is defined
-    - " not 'already exists' in registry_ca_bundle_cm_created.stderr "
-  register: registry_ca_bundle_cm_created
+    ca_bundle_cm_name: '{{ registry_ca_bundle_cm_name }}'
+    ca_trust_stores: '{{ registries_trust_stores }}'
 
 - name: '{{ ansible_name_module }} | update registry config'
   command: >
     {{ openshift_cli }} patch image.config.openshift.io cluster --type=merge -p '{"spec": {"additionalTrustedCA": {"name": "{{ ca_cm_name }}" }}}'
   when:
-    - registry_ca_bundle_cm_created is defined
-    - registry_ca_bundle_cm_created | bool
+    - ca_bundle_cm_created is defined
+    - ca_bundle_cm_created | bool
   register: registry_additional_ca_added
 
