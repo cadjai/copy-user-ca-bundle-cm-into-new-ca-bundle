@@ -1,0 +1,26 @@
+---
+- name: '{{ ansible_name_module }} | Set ca cert bundle extraction dir'
+  ansible.builtin.set_fact:
+    extracted_ca_file_dir: "/tmp/{{ new_ca_cm_key }}"
+
+- name: '{{ ansible_name_module }} | file | extraction folder exist '
+  ansible.builtin.file:
+    path: "{{ extracted_ca_file_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: '{{ ansible_name_module }} | Extract existing CA'
+  ansible.builtin.import_tasks: extract-certificate.yml
+  vars:
+    extracted_custom_ca_file: "{{ extracted_ca_file_dir }}"
+
+- name: '{{ ansible_name_module }} | Create new CM '
+  ansible.builtin.command: >
+    {{ openshift_cli }} create cm {{ new_ca_cm_name }} -n {{  new_ca_cm_namespace | default('openshift-config', true) }} --from-file={{ new_ca_cm_key }}={{ extracted_ca_file_dir }}
+  register: new_ca_cm_created
+
+- name: '{{ ansible_name_module }} | file | remove extraction folder  '
+  ansible.builtin.file:
+    path: "{{ extracted_ca_file_dir }}"
+    state: absent
+

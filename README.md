@@ -29,6 +29,11 @@ Variables for the additional CA bundle for registries
    - port: The port on which the registry listen (default assumes 443)
    - ca_file_pem: The path to the pem based certificate file to use.
       
+Variables for the creating a new CA CM but only changing the key that holds the CA bundle
+- new_ca_cm_name: The name of the to be created configmap.
+- new_ca_cm_namespace: The namespace where the newly created configmap is created in.
+- new_ca_cm_key: The key holding the CA bundle in the new config map
+
 Dependencies
 ------------
 
@@ -79,6 +84,65 @@ Including an example of how to use your role (for instance, with variables passe
 
       roles:
          - { role: copy-user-ca-bundle-cm-into-new-ca-bundle }
+
+To create a configmap using an existing configmap but only changing the key holding the CA bundle use the following
+
+    - hosts: localhost
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+      vars_files:
+        - 'vars/vault.yml'
+        - 'vars/global.yml'
+      vars:
+        module: "Export existing user-ca-bundle"
+        ansible_name_module: "Export CA bundle CM | {{ module }}" 
+      pre_tasks:
+        - name: Install required pip library
+          pip:
+            name: openshift
+            state: present
+
+        - name: Ensure Proper Python dependency is installed for Openshift
+          python_requirements_facts:
+            dependencies:
+              - openshift
+              - requests
+        - name: Authenticate with the API
+          command: >
+            {{ openshift_cli }} login \
+              --token {{ ocp_cluster_token }} \
+              --insecure-skip-tls-verify=true {{ ocp_cluster_console_url }}:{{ ocp_cluster_console_port | d('6443', true) }}
+          when:
+            - ocp_cluster_token is defined and ocp_cluster_token != ""
+          register: login_out
+
+        - name: Authenticate with the API
+          command: >
+            {{ openshift_cli }} login \
+              -u {{ ocp_cluster_user }} \
+              -p {{ ocp_cluster_user_password }} \
+              --insecure-skip-tls-verify=true {{ ocp_cluster_console_url }}:{{ ocp_cluster_console_port | d('6443', true) }}
+          when:
+            - not ocp_cluster_token is defined or ocp_cluster_token == ""
+          register: login_out
+
+      tasks:
+        - name: '{{ ansible_name_module }} | import_tasks | import of mirror-existing-cm-with-key-change.yml '
+          import_tasks: mirror-existing-cm-with-key-change.yml
+          when:
+            - not use_defined_client_ca is defined or not use_defined_client_ca | bool
+
+        - name: '{{ ansible_name_module }} | set_fact | client_ca_policy '
+          set_fact:
+            client_ca_policy: "Optional"
+          when:
+            - not client_ca_policy is defined or client_ca_policy == ''
+
+        - name: '{{ ansible_name_module }} | Patch Default Ingress Controller 1 of 2'
+          command: >
+            {{ openshift_cli }} patch ingresscontroller default --type=merge -p  '{"spec":{"clientTLS":{"clientCA":{"name": "{{ new_ca_cm_name }}"}, "clientCertificatePolicy": "{{ client_ca_policy }}"}}}' -n openshift-ingress-operator
+          register: default_ic_mtls_updated
+
 
 License
 -------
