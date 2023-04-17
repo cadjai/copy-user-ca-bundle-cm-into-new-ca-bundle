@@ -1,7 +1,7 @@
 ---
 - name: '{{ ansible_name_module }} | check user ca'
   command: >
-    {{ openshift_cli }} extract cm/{{ existing_ca_bundle_cm_name | default('user-ca-bundle', true) }} -n {{ existing_ca_bundle_cm_namespace | default('openshift-config', true) }} --to={{ extracted_custom_ca_file | default('/tmp/', true) | dirname }}
+    {{ openshift_cli }} extract cm/{{ existing_ca_bundle_cm_name | default('user-ca-bundle', true) }} -n {{ existing_ca_bundle_cm_namespace | default('openshift-config', true) }} --to={{ (extracted_custom_ca_file | default('/tmp/', true)) | dirname }} --confirm
   ignore_errors: true
-  register: user_ca_bundle_extracted
+  register: ca_bundle_extracted
 
